@@ -4,6 +4,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const _ = require('lodash');
 
+// Start the Express server
+const PORT = process.env.PORT || 5000;
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
@@ -50,13 +52,23 @@ const approveJoinRequest = async (msg) => {
 // Handle new member join requests with debouncing
 bot.on('chat_join_request', _.debounce(approveJoinRequest, 1000, { 'leading': true }));
 
+// Handle commands
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, `Hello, ${msg.from.first_name}! Welcome to the bot.`);
+});
+
+bot.onText(/\/help/, (msg) => {
+  bot.sendMessage(msg.chat.id, `List of available commands:
+/start - Start using the bot
+/help - Get help
+`);
+});
+
 // Set up a route for health checks
 app.get('/health', (req, res) => {
   res.send('Bot is running');
 });
 
-// Start the Express server
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
