@@ -33,7 +33,7 @@ const approveJoinRequest = async (msg) => {
     recentJoins.set(userId, Date.now());
 
     // Send welcome message
-    const sentMsg = await bot.sendMessage(chatId, `Welcome, ${msg.from.first_name}!`);
+    const sentMsg = await bot.sendMessage(chatId, `Hi ${msg.from.first_name}, Welcome to our Channel...`);
 
     // Schedule the message for deletion after 10 seconds
     setTimeout(async () => {
@@ -42,7 +42,7 @@ const approveJoinRequest = async (msg) => {
       } catch (err) {
         console.error(`Failed to delete message: ${err.message}`);
       }
-    }, 10000); // 10000 milliseconds = 10 seconds
+    }, 5000);
 
   } catch (err) {
     console.error(`Failed to approve join request or send message: ${err.message}`);
