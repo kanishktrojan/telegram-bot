@@ -34,6 +34,9 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
+// Log bot startup
+logger.info('Starting bot...');
+
 // Handle new member join requests
 bot.on('chat_join_request', async (ctx) => {
   const userId = ctx.from.id;
@@ -41,7 +44,7 @@ bot.on('chat_join_request', async (ctx) => {
 
   try {
     await bot.telegram.approveChatJoinRequest(chatId, userId);
-    const welcomeMessage = await ctx.reply(`Welcome, ${ctx.from.first_name} to KANIFLIX TV Channel!`);
+    const welcomeMessage = await ctx.reply(`Welcome, ${ctx.from.first_name}! to our Channel...`);
     setTimeout(() => {
       ctx.deleteMessage(welcomeMessage.message_id)
         .catch((err) => {
@@ -54,12 +57,22 @@ bot.on('chat_join_request', async (ctx) => {
 });
 
 // Command handling
-bot.start((ctx) => ctx.reply('Welcome! I am your friendly bot. Use /help to see what I can do.'));
-bot.help((ctx) => ctx.reply('Here are some commands you can use:\n/start - Start the bot\n/help - Show this help message'));
+bot.start((ctx) => {
+  logger.info('Received /start command');
+  ctx.reply(`Welcome ${ctx.from.first_name}! I am Jarvis. Use /help to see what I can do.`);
+});
+bot.help((ctx) => {
+  logger.info('Received /help command');
+  ctx.reply('Here are some commands you can use:\n/start - Start the bot\n/help - Show this help message');
+});
 
 // Additional Commands
-bot.command('ping', (ctx) => ctx.reply('Pong!'));
+bot.command('ping', (ctx) => {
+  logger.info('Received /ping command');
+  ctx.reply('Pong!');
+});
 bot.command('info', (ctx) => {
+  logger.info('Received /info command');
   const infoMessage = `
   Bot Info:
   - Name: Jarvis
@@ -71,6 +84,7 @@ bot.command('info', (ctx) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
+  logger.info('Health check request received');
   res.send('Bot is running');
 });
 
@@ -80,6 +94,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
+// Log server startup
 app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
 });
@@ -87,8 +102,16 @@ app.listen(PORT, () => {
 // Start bot with long polling
 bot.launch().then(() => {
   logger.info('Bot started with long polling');
+}).catch((err) => {
+  logger.error(`Failed to start bot: ${err}`);
 });
 
 // Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+process.once('SIGINT', () => {
+  logger.info('Stopping bot...');
+  bot.stop('SIGINT');
+});
+process.once('SIGTERM', () => {
+  logger.info('Stopping bot...');
+  bot.stop('SIGTERM');
+});
