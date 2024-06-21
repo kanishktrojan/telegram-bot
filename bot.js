@@ -71,8 +71,8 @@ bot.command('info', (ctx) => {
   ctx.reply(infoMessage);
 });
 
-// Webhook setup with increased timeout
-const setWebhook = async () => {
+// Webhook setup with retry logic
+const setWebhook = async (retryCount = 3) => {
   try {
     const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
       method: 'POST',
@@ -87,7 +87,10 @@ const setWebhook = async () => {
     }
     logger.info('Webhook set successfully');
   } catch (err) {
-    logger.error(`Failed to set webhook: ${err}`);
+    logger.error(`Failed to set webhook (attempt ${4 - retryCount}): ${err}`);
+    if (retryCount > 0) {
+      setTimeout(() => setWebhook(retryCount - 1), 5000); // Retry after 5 seconds
+    }
   }
 };
 
