@@ -41,7 +41,7 @@ bot.on('chat_join_request', async (ctx) => {
 
   try {
     await bot.telegram.approveChatJoinRequest(chatId, userId);
-    const welcomeMessage = await ctx.reply(`Welcome, ${ctx.from.first_name}!`);
+    const welcomeMessage = await ctx.reply(`Welcome, ${ctx.from.first_name} to KANIFLIX TV Channel!`);
     setTimeout(() => {
       ctx.deleteMessage(welcomeMessage.message_id)
         .catch((err) => {
@@ -62,7 +62,7 @@ bot.command('ping', (ctx) => ctx.reply('Pong!'));
 bot.command('info', (ctx) => {
   const infoMessage = `
   Bot Info:
-  - Name: Friendly Bot
+  - Name: Jarvis
   - Creator: Kanishk
   - Version: 1.0.0
   `;
