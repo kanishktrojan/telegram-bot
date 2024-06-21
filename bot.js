@@ -4,6 +4,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const winston = require('winston');
+const fetch = require('node-fetch');
 
 // Environment variables
 const PORT = process.env.PORT || 10000;
@@ -70,9 +71,27 @@ bot.command('info', (ctx) => {
   ctx.reply(infoMessage);
 });
 
-// Webhook setup
+// Webhook setup with increased timeout
+const setWebhook = async () => {
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: `${WEBHOOK_URL}/secret-path` }),
+      timeout: 30000, // 30 seconds timeout
+    });
+
+    const data = await response.json();
+    if (!data.ok) {
+      throw new Error(`Failed to set webhook: ${data.description}`);
+    }
+    logger.info('Webhook set successfully');
+  } catch (err) {
+    logger.error(`Failed to set webhook: ${err}`);
+  }
+};
+
 app.use(bot.webhookCallback('/secret-path'));
-bot.telegram.setWebhook(`${WEBHOOK_URL}/secret-path`);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -85,6 +104,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   logger.info(`Server is running on port ${PORT}`);
+  await setWebhook(); // Set the webhook when the server starts
 });
