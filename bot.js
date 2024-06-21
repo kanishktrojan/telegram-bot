@@ -4,12 +4,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const winston = require('winston');
-const fetch = require('node-fetch');
 
 // Environment variables
 const PORT = process.env.PORT || 10000;
 const token = process.env.TELEGRAM_BOT_TOKEN;
-const WEBHOOK_URL = process.env.WEBHOOK_URL;
 
 // Telegram bot
 const bot = new Telegraf(token);
@@ -71,31 +69,6 @@ bot.command('info', (ctx) => {
   ctx.reply(infoMessage);
 });
 
-// Webhook setup with retry logic
-const setWebhook = async (retryCount = 3) => {
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: `${WEBHOOK_URL}/secret-path` }),
-      timeout: 30000, // 30 seconds timeout
-    });
-
-    const data = await response.json();
-    if (!data.ok) {
-      throw new Error(`Failed to set webhook: ${data.description}`);
-    }
-    logger.info('Webhook set successfully');
-  } catch (err) {
-    logger.error(`Failed to set webhook (attempt ${4 - retryCount}): ${err}`);
-    if (retryCount > 0) {
-      setTimeout(() => setWebhook(retryCount - 1), 5000); // Retry after 5 seconds
-    }
-  }
-};
-
-app.use(bot.webhookCallback('/secret-path'));
-
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.send('Bot is running');
@@ -107,7 +80,15 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
-  await setWebhook(); // Set the webhook when the server starts
 });
+
+// Start bot with long polling
+bot.launch().then(() => {
+  logger.info('Bot started with long polling');
+});
+
+// Enable graceful stop
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
