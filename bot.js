@@ -30,7 +30,6 @@ const approveJoinRequest = async (msg) => {
     // Record the join time
     recentJoins.set(userId, Date.now());
     console.log(`Join request approved for user ${userId}`);
-
   } catch (err) {
     console.error(`Failed to approve join request: ${err.message}`);
   }
